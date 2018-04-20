@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var parser = require('xml2json');
+var parseString = require('xml2js').parseString;
 var rp = require('request-promise');
 var JsonTransform = require('../lib/jsontransform.js');
 
@@ -68,14 +68,14 @@ router.post('/xml',xmlparser({trim: false, normalize:false,normalizeTags:false, 
 
 		console.log("Saw XML " + JSON.stringify(req.body.xml))
 		obj = req.body.xml;
-		
+		updates = {};
 		if(obj["transformer.updates"]){
 	  			var updateArray = obj["transformer.updates"] instanceof Array ? obj["transformer.updates"] : [obj["transformer.updates"]];
 	  			console.log("Next Line")
 	  			console.log(updateArray)
-	  			updates = {};
+	  			
 	  			for(var i=0;i<updateArray.length;i++){
-	  				updates[updateArray[i].key] = eval(updateArray[i].code);
+	  				updates[updateArray[i].path] = eval(updateArray[i].code);
 	  				
 	  			}
 	  			console.log("Saw updates")
@@ -83,16 +83,37 @@ router.post('/xml',xmlparser({trim: false, normalize:false,normalizeTags:false, 
 	  			delete obj["transformer.updates"];
 	  			deletes.push("transformer.updates");
 	  	}
+
 	  	if(obj["transformer.deletes"]){
 	  			deletes = obj["transformer.deletes"] instanceof Array ? obj["transformer.deletes"] : [obj["transformer.deletes"]];
-	  			delete obj["transformer.deletes"];
-	  			deletes.push("transformer.deletes");
+	  			//delete obj["transformer.deletes"];
+	  			//deletes.push("transformer.deletes");
 	  	}
   	}
 
-  	processTheBody(obj,updates,deletes,(output)=>{
-  		res.end(JSON.stringify(output));
-  	});
+  	console.log("req.query.service is " + req.query.service)
+	//
+	if(req.query.service != undefined){
+	  	rp(req.query.service)
+		    .then((xml) =>{ 
+		    	parseString(xml, {explicitArray:false,mergeAttrs:true,explicitChildren:true}, function (err, result) {
+						obj = result;
+				});
+
+		    	//obj = JSON.stringify(obj);
+
+			    processTheBody(obj,updates,deletes,(output)=>{
+				  	res.end(JSON.stringify(output));
+				});
+		    }) // Process html...
+		    .catch((err) => console.log(err));
+	 } else {
+	 	 processTheBody(obj,updates,deletes,(output)=>{
+				  	res.end(JSON.stringify(output));
+				});
+	 }
+
+  	
 
 })
 

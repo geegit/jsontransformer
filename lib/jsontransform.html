@@ -1,0 +1,42 @@
+<script src="jsontransform.js"></script>
+<script>
+//Test Data
+var input = {"seriesTitleId":"757073","collapsible":"[select one]","root":"Property Master","Display_Title":"Adventure Time","Scarlett_ID":"368594","contentId":"104068","overwrite_Collection_name":"adventuretime","contentTypeName":"Property Master","char_png_base_url":"http://i.cdn.turner.com/v5cache/CARTOON/site/Images/i77/advtime.png\r\n","Short_Title":"Adventure Time","Scarlett_Search_Term":"Adventure Time","multiproperty_collection":"False","mobile_freeWheelSectionID":"cn.com_site_mobile_web_shows_adventuretime","radiusCollectionId":"CN51","createDate":{"date":21,"day":4,"hours":10,"minutes":40,"month":0,"seconds":57,"time":1264088457000,"timezoneOffset":300,"year":110},"app_freeWheelSectionID":"cn.com_mobile_ios_shows_adventuretime","pubDate":{"date":5,"day":1,"hours":10,"minutes":0,"month":3,"seconds":0,"time":1270476000000,"timezoneOffset":240,"year":110},"modifyBy":"LRandall","hide_collection":"False","videoApp_FeaturedEpisode_Display":"False","contentName":"Adventure Time MASTER","CanonicalTag":"https://www.cartoonnetwork.com/games/adventuretime/index.html","freeWheelSectionID":"cn.com_shows_adventure_time","videoApp_Intro_Whitelist":"True","Title":"Adventure Time","ad_showID":"advtime","ad_registry":"https://i.cdn.turner.com/ads/toon/toon_shows_advtime.js","VMA_Collection_ID":"8a250ab02578da2201257a603d960035","Property_Type":"show","statusCd":"3","contentTypeId":"536","radiusID":"CN51-FN653","videoApp_Mix_Whitelist":"True","Metatag_Keywords":"Adventure Time With Finn & Jake, Free Online Games, Adventure Time Games, Land of Ooo, Adventure Time, Free Games, Action Games, Funny Videos, Cartoon Network, TV Show, Princess Bubblegum, Ice King, Finn, Fin, Jake, Video, Download, Marceline, Vampire, Math, Cartoon, Dog"}
+//Test Transformation
+var transformations = {
+	"address.street": (key,value,destination)=>{
+		
+		destination[key] = value.toUpperCase();
+		logger.log(JSON.stringify(destination));
+	},
+	"Scarlett_ID": (k,v,d)=>{
+		d.setKeyName("scarlettId");
+	}
+}
+
+//Test Delete
+var deletes = [
+	"collapsible",
+	"root",
+	"Display_Title",
+	"overwrite_Collection_name",
+	"seriesTitleId",
+	"Short_Title",
+	"char_png_base_url"
+]
+
+var logger = {log:(msg,done)=>{
+	if(done)
+		console.log(msg)
+}};
+
+new JsonTransform(input,transformations,deletes)
+	.on("Short_Title",(key,value,destination)=>{
+		destination.Short_Title_Upper_Case = value.toUpperCase();
+	}).on("char_png_base_url",(key,value,destination)=>{
+		destination.trackingUrl = value;
+	})
+	.then((output)=>{console.log(JSON.stringify(output))})
+
+
+</script>

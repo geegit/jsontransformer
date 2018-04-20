@@ -32,6 +32,7 @@
     "shelljs": "^0.8.0",
     "through2": "^2.0.3",
     "url": "^0.11.0",
+    "xml2js": "^0.4.19",
     "xml2json": "^0.11.2",
     "zip-folder": "^1.0.0",
     "zip-local": "^0.3.4"
