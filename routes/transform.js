@@ -5,9 +5,9 @@ var rp = require('request-promise');
 var JsonTransform = require('../lib/jsontransform.js');
 
 
-var processTheBody = (obj, updates, deletes, callback)=>{
+var processTheBody = (obj, updates, deletes, callback,errors)=>{
 
-	  new JsonTransform(obj,updates,deletes).then((output)=>{
+	  new JsonTransform(obj,updates,deletes,errors).then((output)=>{
 	  	callback(output);
 	  })
 
@@ -19,25 +19,50 @@ router.post('/json', function(req, res, next) {
   	var obj = {json:{firstName:"Dude", lastName:"Williams","transformer.updates":{},"transformer.deletes":[]}};
 	  var updates = {};
 	  var deletes = [];
-
+	  var errors = [];
+	  var config = "";
 	if(req.body.json){
 
+			console.log("Up in HERE JSON")
+
 	  		obj = req.body.json;
+
 	  		if(obj["transformer.updates"]){
 	  			updates = obj["transformer.updates"];
-	  			for(key in updates){
-	  				updates[key] = eval(updates[key]);
-	  			}
 	  		}
+
 	  		if(obj["transformer.deletes"]){
 	  			deletes = obj["transformer.deletes"];
 	  		}
+
+	  		if(obj.config){
+	  			console.log(`Getting Config ../public/${obj.config}`)
+	  			jsonDef = require(`../public/${obj.config}`);
+	  			console.log(config)
+	  			deletes = jsonDef["transformer.deletes"];
+	  			updates = jsonDef["transformer.updates"];
+	  		}
+
+  			try {
+
+	  			for(key in updates){
+	  				updates[key] = eval(updates[key]);
+	  			}
+
+  			}catch(e){
+  				errors.push({error:`Transformation for ${key} failed with message ${e.message}`,lineNumber:e.lineNumber})
+  			}
+	  		
+	  		
+
+
 	}
 
 	console.log("req.query.service is " + req.query.service)
 	//
 	if(req.query.service != undefined){
-	  	rp(req.query.service)
+		var url = decodeURI(req.query.service);	  	
+		rp(req.query.service)
 		    .then((obj) =>{ 
 		    	obj = JSON.parse(obj)
 			    processTheBody(obj,updates,deletes,(output)=>{
@@ -48,7 +73,7 @@ router.post('/json', function(req, res, next) {
 	 } else {
 	 	 processTheBody(obj,updates,deletes,(output)=>{
 				  	res.end(JSON.stringify(output));
-				});
+				},errors);
 	 }
 
 
@@ -63,7 +88,7 @@ router.post('/xml',xmlparser({trim: false, normalize:false,normalizeTags:false, 
 	var obj = content.xml;
 	var updates = content.updates;
 	var deletes = content.deletes;
-
+	var errors = [];
 	if(req.body.xml){
 
 		console.log("Saw XML " + JSON.stringify(req.body.xml))
@@ -75,8 +100,12 @@ router.post('/xml',xmlparser({trim: false, normalize:false,normalizeTags:false, 
 	  			console.log(updateArray)
 	  			
 	  			for(var i=0;i<updateArray.length;i++){
-	  				updates[updateArray[i].path] = eval(updateArray[i].code);
-	  				
+	  				try {
+	  					updates[updateArray[i].path] = eval(updateArray[i].code);
+	  				}catch(e){
+	  					updates[updateArray[i].path] = (updateArray[i].code);
+	  					errors.push({error:`Transformation for ${updateArray[i].path} failed with message ${e.message}`,lineNumber:e.lineNumber})
+	  				}
 	  			}
 	  			console.log("Saw updates")
 	  			console.log(updates)
@@ -104,13 +133,13 @@ router.post('/xml',xmlparser({trim: false, normalize:false,normalizeTags:false, 
 
 			    processTheBody(obj,updates,deletes,(output)=>{
 				  	res.end(JSON.stringify(output));
-				});
+				},errors);
 		    }) // Process html...
 		    .catch((err) => console.log(err));
 	 } else {
 	 	 processTheBody(obj,updates,deletes,(output)=>{
 				  	res.end(JSON.stringify(output));
-				});
+				},errors);
 	 }
 
   	
