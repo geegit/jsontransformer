@@ -38,7 +38,8 @@ router.post('/json', function(req, res, next) {
 	  		if(obj.config){
 	  			console.log(`Getting Config ../public/${obj.config}`)
 	  			jsonDef = require(`../public/${obj.config}`);
-	  			console.log(config)
+	  			console.log("THE CONFIG IS")
+	  			console.log(jsonDef)
 	  			deletes = jsonDef["transformer.deletes"];
 	  			updates = jsonDef["transformer.updates"];
 	  		}
@@ -69,7 +70,12 @@ router.post('/json', function(req, res, next) {
 				  	res.end(JSON.stringify(output));
 				});
 		    }) // Process html...
-		    .catch((err) => console.log(err));
+		    .catch((err) => {
+		    	console.log(err)
+		    	processTheBody({data:{errors:err.message}},updates,deletes,(output)=>{
+				  	res.end(JSON.stringify(output));
+				});
+		    });
 	 } else {
 	 	 processTheBody(obj,updates,deletes,(output)=>{
 				  	res.end(JSON.stringify(output));
